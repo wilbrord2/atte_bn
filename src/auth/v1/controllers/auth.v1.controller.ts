@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   HttpStatus,
+  InternalServerErrorException,
   NotFoundException,
   Post,
 } from '@nestjs/common';
@@ -48,7 +49,20 @@ export class AuthControllerV1 {
     body.phone = body.phone.trim();
     body.password = body.password.trim();
 
+     if (
+       !body.email.includes('@ines.ac.rw') ||
+       !body.email.endsWith('@ines.ac.rw')
+     ) {
+       throw new BadRequestException(
+         'Invalid email: please use your official INES email address ending with @ines.ac.rw',
+       );
+     }
+
     const foundUserRecord = await this.authService.findOneByEmail(body.email);
+    console.log(
+      'No existing user found, proceeding to create a new account.',
+      foundUserRecord,
+    );
 
     if (body.fullname.length < 3)
       throw new BadRequestException('Full name should be provided');
@@ -69,11 +83,12 @@ export class AuthControllerV1 {
         body.phone,
         bcrypt.hashSync(body.password, 10),
       );
-
+    if (!user) throw new InternalServerErrorException();
     return new SignUpResDto({
       message: `Account created successfully.`,
     });
   }
+
 
   @Post('signin')
   @ApiBody({ type: SignInReqDto })

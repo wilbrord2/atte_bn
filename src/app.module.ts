@@ -16,6 +16,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import typeorm from './config/typeorm';
 import { LoggingModule } from './logging/logging.module';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -70,6 +72,8 @@ import { LoggingModule } from './logging/logging.module';
       ],
     }),
     LoggingModule,
+    AuthModule,
+    UserModule,
   ],
   controllers: [AppController],
 })

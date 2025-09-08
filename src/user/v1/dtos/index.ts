@@ -1,0 +1,1 @@
+export * from './student.v1.res.dto';

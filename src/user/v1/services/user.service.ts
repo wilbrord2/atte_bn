@@ -21,7 +21,6 @@ export class UserService {
           id: true,
           password: true,
           phone: true,
-         
         },
       });
 
@@ -79,58 +78,55 @@ export class UserService {
     }
   }
 
-  // async verify(
-  //   userId: number,
-  //   user: Partial<User>,
-  //   documentNumber: string
-  // ): Promise<Partial<User>> {
-  //   try {
-  //     await this.userRepository.update(userId, {
-  //       is_phone_number_verified: true,
-  //     });
+  async getAllStudents(): Promise<Partial<User>[]> {
+    try {
+      const students = await this.userRepository.find({
+        where: {
+          role: Role.CLIENT,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      });
+      return students;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
 
-  //     await this.updatePhoneCodeSetDate(userId, user);
-  //     await this.kycInfoRepository.update(
-  //       { document_number: documentNumber },
-  //       { user_id: userId }
-  //     );
+  async updateStudentById(
+    studentId: number,
+    name: string,
+    email: string,
+    phone: string,
+  ): Promise<Partial<User>> {
+    try {
+      await this.userRepository.update(
+        { id: studentId },
+        {
+          name: name,
+          email: email,
+          phone: phone,
+        },
+      );
 
-  //     return await this.findOneById(userId);
-  //   } catch (error) {
-  //     console.log(error);
-  //     throw new InternalServerErrorException();
-  //   }
-  // }
+      return await this.findOneById(studentId);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
 
-  // async updatePhoneCodeSetDate(
-  //   userId: number,
-  //   user: Partial<User>
-  // ): Promise<void> {
-  //   try {
-  //     await this.userRepository.update(userId, {
-  //       is_phone_number_verification_code_set_date: moment(
-  //         user.is_phone_number_verification_code_set_date,
-  //         'YYYY-MM-DD HH:mm:ss'
-  //       )
-  //         .subtract(5, 'minutes')
-  //         .format('YYYY-MM-DD hh:mm:ss a'),
-  //     });
-  //     return;
-  //   } catch (error) {
-  //     console.log(error);
-  //     throw new InternalServerErrorException();
-  //   }
-  // }
-
-  // @OnEvent(AUTH_EVENTS.UsersAccountCreated, { async: true })
-  // async handleUserAccountCreatedEvent({
-  //   userId,
-  //   verificationCode,
-  // }: UsersAccountCreatedPayload) {
-  //   const user = await this.findOneById(userId);
-  //   if (!user) return;
-
-  //   const message = `Your MOCA verification code is: ${verificationCode}.\nIt will expire in 5 minutes.`;
-  //   await this.smsService.sendSMSViaAfricasTalking(user.phone, message);
-  // }
+  async deleteStudentById(studentId: number): Promise<void> {
+    try {
+      await this.userRepository.delete({ id: studentId });
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
 }
