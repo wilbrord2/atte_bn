@@ -1,11 +1,12 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
   HttpStatus,
+  Param,
   Patch,
-  Post,
   Query,
   Req,
   UseGuards,
@@ -22,10 +23,11 @@ import { HttpExceptionSchema, Role, Roles } from '../../../__helpers__';
 import express from 'express';
 import { UserService } from '../services/user.service';
 import {
-  getStudentQueryParams,
-  StudentsResDto,
+  GetStudentResDto,
+  GetAllStudentsResDto,
 } from '../dtos/student.v1.res.dto';
 import type { Request } from 'express';
+import { SignUpReqDto } from 'src/auth/v1/dtos';
 
 @ApiTags('Students')
 @Controller({ path: 'students', version: '1' })
@@ -33,10 +35,10 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
   @Get()
   @ApiOperation({ summary: 'Get All Student' })
-  //   @ApiBearerAuth('access-token')
-  //   @UseGuards(AccessTokenGuard, RbacGuard)
-  //   @Roles(Role.Client)
-  @ApiResponse({ type: StudentsResDto, isArray: true, status: 200 })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Student)
+  @ApiResponse({ type: GetAllStudentsResDto, isArray: true, status: 200 })
   @ApiResponse({ type: HttpExceptionSchema, status: 400 })
   @ApiResponse({ type: HttpExceptionSchema, status: 401 })
   @ApiResponse({ type: HttpExceptionSchema, status: 201 })
@@ -46,19 +48,19 @@ export class UserController {
   async getAllStudents() {
     const students = await this.userService.getAllStudents();
 
-    return new StudentsResDto({
+    return new GetAllStudentsResDto({
       message: 'Fetched all students successfully',
-      students: students,
+      students,
     });
   }
 
-  @Get(':id')
+  @Get('/:id')
   @ApiOperation({ summary: 'Get Student by ID' })
-  //   @ApiBearerAuth('access-token')
-  //   @UseGuards(AccessTokenGuard, RbacGuard)
-  //   @Roles(Role.Client)
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Student)
   @ApiResponse({
-    type: StudentsResDto,
+    type: GetStudentResDto,
     description: 'Student fetched successfully',
     status: 200,
   })
@@ -68,8 +70,7 @@ export class UserController {
   @ApiResponse({ type: HttpExceptionSchema, status: 500 })
   @ApiResponse({ type: HttpExceptionSchema, status: 403 })
   @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async getStudentById(@Query() query: getStudentQueryParams) {
-    const studentId = query.id;
+  async getStudentById(@Param('id') studentId: number) {
     const studentExists = await this.userService.findOneById(studentId);
 
     if (!studentExists) {
@@ -79,9 +80,9 @@ export class UserController {
       });
     }
 
-    return new StudentsResDto({
-      message: 'Fetched student successfully',
-      ...studentExists,
+    return new GetStudentResDto({
+      message: 'Student fetched Successfully',
+      student: studentExists,
     });
   }
 
@@ -89,9 +90,9 @@ export class UserController {
   @ApiOperation({ summary: 'Update Student by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
-  @Roles(Role.Client)
+  @Roles(Role.Student)
   @ApiResponse({
-    type: StudentsResDto,
+    type: GetStudentResDto,
     description: 'Student updated successfully',
     status: 200,
   })
@@ -103,10 +104,10 @@ export class UserController {
   @ApiResponse({ type: HttpExceptionSchema, status: 404 })
   async updateStudentById(
     @Req() req: Request,
-    @Query() query: getStudentQueryParams,
+    @Body() body: SignUpReqDto,
+    @Param('id') studentId: number,
   ) {
-    const studentId = query.id;
-    const { name, email, phone } = req.body;
+    const { fullname, email, phone, password } = body;
     const studentExists = await this.userService.findOneById(studentId);
 
     if (!studentExists) {
@@ -116,23 +117,26 @@ export class UserController {
       });
     }
 
-    if (!name || !email || !phone) {
+    if (!fullname || !email || !phone || !password) {
       throw new BadRequestException({
         status: HttpStatus.BAD_REQUEST,
-        message: 'Name, email and phone are required',
+        message: 'full name, email, phone or password are required',
       });
     }
 
     const updatedStudent = await this.userService.updateStudentById(
       studentId,
-      name,
+      fullname,
       email,
       phone,
+      password,
     );
 
-    return new StudentsResDto({
-      message: 'Student updated successfully',
-      ...updatedStudent,
+    console.log(updatedStudent);
+
+    return new GetStudentResDto({
+      message: 'Student Updated Sucessfully',
+      student: updatedStudent,
     });
   }
 
@@ -140,9 +144,9 @@ export class UserController {
   @ApiOperation({ summary: 'Delete Student by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
-  @Roles(Role.Client)
+  @Roles(Role.Student)
   @ApiResponse({
-    type: StudentsResDto,
+    type: GetStudentResDto,
     description: 'Student deleted successfully',
     status: 200,
   })
@@ -152,22 +156,21 @@ export class UserController {
   @ApiResponse({ type: HttpExceptionSchema, status: 500 })
   @ApiResponse({ type: HttpExceptionSchema, status: 403 })
   @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async deleteStudentById(@Query() query: getStudentQueryParams) {
-    const studentId = query.id;
+  async deleteStudentById(@Param('id') studentId: number) {
     const studentExists = await this.userService.findOneById(studentId);
 
     if (!studentExists) {
       throw new BadRequestException({
         status: HttpStatus.NOT_FOUND,
-        message: 'Student not found',
+        message: 'Student does not exist',
       });
     }
 
     await this.userService.deleteStudentById(studentId);
 
-    return new StudentsResDto({
+    return new GetStudentResDto({
       message: 'Student deleted successfully',
-      ...studentExists,
+      student: studentExists,
     });
-  } 
+  }
 }

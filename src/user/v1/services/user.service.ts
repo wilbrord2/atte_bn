@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { InternalServerErrorException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Role, User } from '../entities';
+import { StudentsResDto } from '../dtos';
 
 @Injectable()
 export class UserService {
@@ -11,7 +12,7 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findOneById(userId: number): Promise<User | null> {
+  async findOneById(userId: number): Promise<StudentsResDto | null> {
     try {
       const result = await this.userRepository.findOne({
         where: {
@@ -19,7 +20,8 @@ export class UserService {
         },
         select: {
           id: true,
-          password: true,
+          name: true,
+          email: true,
           phone: true,
         },
       });
@@ -64,7 +66,7 @@ export class UserService {
         email: email,
         phone: phone,
         password: hashedPassword,
-        role: Role.CLIENT,
+        role: Role.STUDENT,
         is_class_representative: false,
         archived: 'no',
       });
@@ -78,20 +80,22 @@ export class UserService {
     }
   }
 
-  async getAllStudents(): Promise<Partial<User>[]> {
+  async getAllStudents(): Promise<Partial<StudentsResDto[]>> {
     try {
       const students = await this.userRepository.find({
         where: {
-          role: Role.CLIENT,
+          role: Role.STUDENT,
         },
         select: {
           id: true,
           name: true,
           email: true,
           phone: true,
+          role: true,
         },
       });
-      return students;
+      const allStudents = students.map((stu) => new StudentsResDto(stu));
+      return allStudents;
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException();
@@ -103,7 +107,8 @@ export class UserService {
     name: string,
     email: string,
     phone: string,
-  ): Promise<Partial<User>> {
+    password: string,
+  ): Promise<StudentsResDto> {
     try {
       await this.userRepository.update(
         { id: studentId },
@@ -111,6 +116,7 @@ export class UserService {
           name: name,
           email: email,
           phone: phone,
+          password: password,
         },
       );
 
@@ -122,8 +128,10 @@ export class UserService {
   }
 
   async deleteStudentById(studentId: number): Promise<void> {
+    console.log({ studentId });
     try {
-      await this.userRepository.delete({ id: studentId });
+      const result = await this.userRepository.delete({ id: studentId });
+      console.log(result);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException();

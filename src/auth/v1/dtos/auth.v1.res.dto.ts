@@ -3,7 +3,10 @@ import { Expose } from 'class-transformer';
 import { BaseResV1 } from '../../../__helpers__';
 
 @ApiTags('auth')
-export class AuthResDto extends BaseResV1 {
+export class AuthResDto {
+  constructor(partial: Partial<AuthResDto>) {
+    Object.assign(this, partial);
+  }
   @ApiProperty({
     type: 'string',
     description: 'Succesful account setup message',
@@ -17,7 +20,10 @@ export class AuthResDto extends BaseResV1 {
 }
 
 @ApiTags('auth')
-export class SignUpResDto extends BaseResV1 {
+export class SignUpResDto {
+  constructor(partial: Partial<SignUpResDto>) {
+    Object.assign(this, partial);
+  }
   @ApiProperty({ type: 'string', description: 'message on successful signup' })
   @Expose()
   message: string;

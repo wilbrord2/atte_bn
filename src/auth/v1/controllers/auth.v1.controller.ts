@@ -60,7 +60,7 @@ export class AuthControllerV1 {
 
     const foundUserRecord = await this.authService.findOneByEmail(body.email);
     console.log(
-      'No existing user found, proceeding to create a new account.',
+      
       foundUserRecord,
     );
 
