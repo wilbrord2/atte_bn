@@ -2,6 +2,8 @@ import { registerAs } from '@nestjs/config';
 import { config as dotenvConfig } from 'dotenv';
 import { User } from '../user/v1/entities';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { ClassRoom } from '../class_management/v1/entities';
+import { Reviews } from '../reviews_management/v1/entities';
 
 dotenvConfig({ path: '.env' });
 
@@ -12,7 +14,7 @@ const config = {
   username: `${process.env.DATABASE_USERNAME}`,
   password: `${process.env.DATABASE_PASSWORD}`,
   database: `${process.env.DATABASE_NAME}`,
-  entities: [User],
+  entities: [User, ClassRoom, Reviews],
   logging: true,
   migrations: ['dist/migrations/*{.ts,.js}'],
   autoLoadEntities: true,

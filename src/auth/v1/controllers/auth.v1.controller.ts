@@ -59,10 +59,6 @@ export class AuthControllerV1 {
      }
 
     const foundUserRecord = await this.authService.findOneByEmail(body.email);
-    console.log(
-      
-      foundUserRecord,
-    );
 
     if (body.fullname.length < 3)
       throw new BadRequestException('Full name should be provided');

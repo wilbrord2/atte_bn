@@ -1,8 +1,11 @@
+import { Reviews } from '../../../reviews_management/v1/entities';
+import { ClassRoom } from '../../../class_management/v1/entities';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
   UpdateDateColumn,
@@ -49,7 +52,12 @@ export class User {
   @Column({ type: 'boolean', nullable: true, default: false })
   is_class_representative: boolean;
 
-  @Column({ type: 'varchar', nullable: true, default: 'no' })
+  @Column({
+    type: 'enum',
+    enum: Archived,
+    nullable: true,
+    default: Archived.NO,
+  })
   archived: string;
 
   @Column({ type: 'varchar', nullable: true, length: 50 })
@@ -63,4 +71,9 @@ export class User {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
+
+  @OneToMany(() => ClassRoom, (classroom) => classroom.user)
+  classroom: ClassRoom[];
+  @OneToMany(() => Reviews, (reviews) => reviews.user)
+  reviews: Reviews[];
 }

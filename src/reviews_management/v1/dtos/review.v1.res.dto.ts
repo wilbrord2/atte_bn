@@ -40,7 +40,7 @@ export class GetAllStudentsResDto {
   @ApiProperty({ type: 'string', description: 'Login Access Token' })
   @Expose()
   message: string;
-  @ApiProperty({ type: [StudentsResDto], description: 'student list' })
+  @ApiProperty({ type: [StudentsResDto], description: 'ikimina groups' })
   @Transform((n) => (n.value ? n.value.map((m) => new StudentsResDto(m)) : []))
   @Expose()
   students: StudentsResDto[];

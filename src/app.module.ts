@@ -18,6 +18,8 @@ import typeorm from './config/typeorm';
 import { LoggingModule } from './logging/logging.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { ClassManagementModule } from './class_management/classroom.module';
+import { ReviewsModule } from './reviews_management/reviews.module';
 
 @Module({
   imports: [
@@ -74,6 +76,8 @@ import { UserModule } from './user/user.module';
     LoggingModule,
     AuthModule,
     UserModule,
+    ClassManagementModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
 })
