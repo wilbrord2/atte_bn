@@ -56,7 +56,7 @@ export class ClassManagementController {
       });
     } else {
       const classroom = await this.classroomService.create(userId, body);
-      console.log({ classroom });
+     
       return new GetClassroomResDto({
         message: 'Classroom created successfully',
         classroom,
@@ -78,7 +78,7 @@ export class ClassManagementController {
   @ApiResponse({ type: HttpExceptionSchema, status: 404 })
   async getAllClassRooms() {
     const classrooms = await this.classroomService.getAllClassrooms();
-    console.log(classrooms)
+
     return new GetAllClassroomsResDto({
       message: 'Fetched all students successfully',
       classrooms,
@@ -90,108 +90,61 @@ export class ClassManagementController {
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
-  @ApiResponse({
-    type: GetClassroomResDto,
-    description: 'Student fetched successfully',
-    status: 200,
-  })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async getStudentById(@Param('id') studentId: number) {
-    // const classroom = await this.classroomService.findOneById(studentId);
-    // if (!classroom) {
-    //   throw new BadRequestException({
-    //     status: HttpStatus.NOT_FOUND,
-    //     message: 'Student not found',
-    //   });
-    // }
-    // return new GetClassroomResDto({
-    //   message: 'Student fetched Successfully',
-    //   classroom: classroom,
-    // });
+  @ApiResponse({ type: GetClassroomResDto, status: 200 })
+  async getClassRoomById(@Param('id') id: number) {
+    const classroom = await this.classroomService.getOneClassroomById(id);
+    if (!classroom) {
+      throw new BadRequestException({
+        status: HttpStatus.NOT_FOUND,
+        message: 'Classroom not found',
+      });
+    }
+    return new GetClassroomResDto({
+      message: 'Classroom fetched successfully',
+      classroom,
+    });
   }
 
-  @Patch(':id')
+  @Patch('/:id')
   @ApiOperation({ summary: 'Update Classroom by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
-  @ApiResponse({
-    type: GetClassroomResDto,
-    description: 'Student updated successfully',
-    status: 200,
-  })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async updateStudentById(
-    @Req() req: Request,
-    @Body() body: SignUpReqDto,
-    @Param('id') studentId: number,
+  @ApiResponse({ type: GetClassroomResDto, status: 200 })
+  async updateClassRoomById(
+    @Param('id') id: number,
+    @Body() body: ClassroomReqDto,
   ) {
-    // const { fullname, email, phone, password } = body;
-    // const studentExists = await this.classroomService.findOneById(studentId);
-    // if (!studentExists) {
-    //   throw new BadRequestException({
-    //     status: HttpStatus.NOT_FOUND,
-    //     message: 'Student not found',
-    //   });
-    // }
-    // if (!fullname || !email || !phone || !password) {
-    //   throw new BadRequestException({
-    //     status: HttpStatus.BAD_REQUEST,
-    //     message: 'full name, email, phone or password are required',
-    //   });
-    // }
-    // const updatedStudent = await this.classroomService.updateStudentById(
-    //   studentId,
-    //   fullname,
-    //   email,
-    //   phone,
-    //   password,
-    // );
-    // console.log(updatedStudent);
-    // return new GetClassroomResDto({
-    //   message: 'Student Updated Sucessfully',
-    //   classroom: updatedStudent,
-    // });
+    const updated = await this.classroomService.updateClassroomById(id, body);
+    if (!updated) {
+      throw new BadRequestException({
+        status: HttpStatus.NOT_FOUND,
+        message: 'Classroom not found',
+      });
+    }
+    return new GetClassroomResDto({
+      message: 'Classroom updated successfully',
+      classroom: updated,
+    });
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   @ApiOperation({ summary: 'Delete Classroom by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
-  @ApiResponse({
-    type: GetClassroomResDto,
-    description: 'Student deleted successfully',
-    status: 200,
-  })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async deleteStudentById(@Param('id') studentId: number) {
-    // const studentExists = await this.classroomService.findOneById(studentId);
-    // if (!studentExists) {
-    //   throw new BadRequestException({
-    //     status: HttpStatus.NOT_FOUND,
-    //     message: 'Student does not exist',
-    //   });
-    // }
-    // await this.classroomService.deleteStudentById(studentId);
-    // return new GetClassroomResDto({
-    //   message: 'Student deleted successfully',
-    //   classroom: studentExists,
-    // });
+  @ApiResponse({ type: GetClassroomResDto, status: 200 })
+  async deleteClassNameById(@Param('id') id: number) {
+    const deleted = await this.classroomService.deleteClassroomById(id);
+    if (!deleted) {
+      throw new BadRequestException({
+        status: HttpStatus.NOT_FOUND,
+        message: 'Classroom not found',
+      });
+    }
+    return new GetClassroomResDto({
+      message: 'Classroom deleted successfully',
+      classroom: deleted,
+    });
   }
 }

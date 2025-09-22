@@ -128,10 +128,10 @@ export class UserService {
   }
 
   async deleteStudentById(studentId: number): Promise<void> {
-    console.log({ studentId });
+   
     try {
       const result = await this.userRepository.delete({ id: studentId });
-      console.log(result);
+     
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException();

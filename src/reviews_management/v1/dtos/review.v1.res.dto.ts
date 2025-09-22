@@ -1,73 +1,84 @@
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { BaseResV1 } from '../../../__helpers__';
+import { Archived, Period } from '../entities';
 
-@ApiTags('students')
-export class StudentsResDto {
-  constructor(partial: Partial<StudentsResDto>) {
+@ApiTags('reviews')
+export class ReviewResDto {
+  constructor(partial: Partial<ReviewResDto>) {
     Object.assign(this, partial);
   }
-  @ApiProperty({
-    type: 'number',
-  })
+
+  @ApiProperty({ example: 1 })
   @Expose()
   id: number;
 
+  @ApiProperty({ example: '1', description: 'Semester number' })
+  @Expose()
+  semester: string;
+
+  @ApiProperty({ example: 'Computer Science', description: 'Lecture title' })
+  @Expose()
+  lecture: string;
+
+  @ApiProperty({ example: 'Dr Gakwaya Eric', description: 'Teacher full name' })
+  @Expose()
+  teacher_fullname: string;
+
   @ApiProperty({
-    type: 'string',
-    description: 'Role of the student',
+    example: 'This course was very informative',
+    description: 'Course feedback',
   })
   @Expose()
-  role: string;
+  review: string;
 
-  @ApiProperty({ type: 'string', description: 'Login Access Token' })
+  @ApiProperty({ example: Period.BEFORENOON, enum: Period })
   @Expose()
-  name: string;
+  @Transform(({ value }) => value as Period)
+  class_period: Period;
 
-  @ApiProperty({ type: 'string', description: 'Login Access Token' })
+  @ApiProperty({ example: '08:00', description: 'Class start time (HH:mm)' })
   @Expose()
-  email: string;
+  start_at: string;
 
-  @ApiProperty({ type: 'string', description: 'Login Access Token' })
+  @ApiProperty({ example: '10:00', description: 'Class end time (HH:mm)' })
   @Expose()
-  phone: string;
+  end_at: string;
+
+  @ApiProperty({ example: '2025-09-16T08:30:00Z' })
+  @Expose()
+  created_at: Date;
+
+  @ApiProperty({ example: '2025-09-16T10:00:00Z' })
+  @Expose()
+  updated_at: Date;
 }
 
-export class GetAllStudentsResDto {
-  constructor(partial: Partial<GetAllStudentsResDto>) {
+export class GetAllReviewsResDto {
+  constructor(partial: Partial<GetAllReviewsResDto>) {
     Object.assign(this, partial);
   }
-  @ApiProperty({ type: 'string', description: 'Login Access Token' })
-  @Expose()
-  message: string;
-  @ApiProperty({ type: [StudentsResDto], description: 'ikimina groups' })
-  @Transform((n) => (n.value ? n.value.map((m) => new StudentsResDto(m)) : []))
-  @Expose()
-  students: StudentsResDto[];
-}
 
-export class GetStudentResDto {
-  constructor(partial: Partial<GetStudentResDto>) {
-    Object.assign(this, partial);
-  }
   @ApiProperty({ type: 'string', description: 'Response message' })
   @Expose()
   message: string;
 
-  @ApiProperty({ type: StudentsResDto, description: 'Deleted student' })
-  @Type(() => StudentsResDto)
+  @ApiProperty({ type: [ReviewResDto], description: 'List of reviews' })
+  @Transform((n) => (n.value ? n.value.map((m) => new ReviewResDto(m)) : []))
   @Expose()
-  student: StudentsResDto;
+  reviews: ReviewResDto[];
 }
 
-@ApiTags('students')
-export class getStudentQueryParams {
-  @ApiProperty({
-    type: 'number',
-    description: 'student id',
-    required: true,
-    example: 1,
-  })
+export class GetReviewResDto {
+  constructor(partial: Partial<GetReviewResDto>) {
+    Object.assign(this, partial);
+  }
+
+  @ApiProperty({ type: 'string', description: 'Response message' })
   @Expose()
-  id: number;
+  message: string;
+
+  @ApiProperty({ type: ReviewResDto, description: 'Review details' })
+  @Type(() => ReviewResDto)
+  @Expose()
+  review: ReviewResDto;
 }

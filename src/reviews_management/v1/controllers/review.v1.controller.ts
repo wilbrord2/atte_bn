@@ -5,13 +5,16 @@ import {
   Delete,
   Get,
   HttpStatus,
+  NotFoundException,
   Param,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -20,35 +23,65 @@ import { AccessTokenGuard, RbacGuard } from '../../../auth/v1/guards';
 import { HttpExceptionSchema, Role, Roles } from '../../../__helpers__';
 
 import { ReviewService } from '../services/review.service';
-import {
-  GetStudentResDto,
-  GetAllStudentsResDto,
-} from '../dtos/review.v1.res.dto';
+
 import type { Request } from 'express';
-import { SignUpReqDto } from 'src/auth/v1/dtos';
+import { ReviewReqDto, GetReviewResDto, GetAllReviewsResDto } from '../dtos';
+import { ClassManagementService } from '../../../class_management/v1/services/classroom.service';
 
 @ApiTags('Reviews')
 @Controller({ path: 'reviews', version: '1' })
 export class ReviewsController {
-  constructor(private readonly reviewService: ReviewService) {}
+  constructor(
+    private readonly reviewService: ReviewService,
+    private readonly classroomService: ClassManagementService,
+  ) {}
+
+  @Post()
+  @ApiBody({ type: ReviewReqDto })
+  @ApiOperation({ summary: 'Submit a review' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Student)
+  @ApiResponse({ type: GetReviewResDto, status: HttpStatus.OK })
+  async CreateClassReview(@Body() body: ReviewReqDto, @Req() req: Request) {
+    const userId = Number(req?.['user'].id);
+    const is_verified = await this.classroomService.findVerifiedOneById(userId);
+    const hasClassRoom = await this.reviewService.getStudentClass(userId);
+
+    if (!is_verified) {
+      throw new BadRequestException({
+        status: HttpStatus.BAD_REQUEST,
+        message:
+          'You are not allowed to create a review, you must first be verified!!',
+      });
+    } else if (!hasClassRoom) {
+      throw new NotFoundException('Student is not assigned to any classroom');
+    } else {
+      const review = await this.reviewService.create(
+        hasClassRoom.id,
+        userId,
+        body,
+      );
+
+      return new GetReviewResDto({
+        message: 'Review Submitted Successfully',
+        review,
+      });
+    }
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get All Reviews' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
-  @ApiResponse({ type: GetAllStudentsResDto, isArray: true, status: 200 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async getAllStudents() {
-    const students = await this.reviewService.getAllStudents();
+  @ApiResponse({ type: GetAllReviewsResDto, status: 200 })
+  async getAllReviews() {
+    const reviews = await this.reviewService.getAllReviews();
 
-    return new GetAllStudentsResDto({
-      message: 'Fetched all students successfully',
-      students,
+    return new GetAllReviewsResDto({
+      message: 'Fetched all reviews successfully',
+      reviews,
     });
   }
 
@@ -58,117 +91,65 @@ export class ReviewsController {
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
   @ApiResponse({
-    type: GetStudentResDto,
-    description: 'Student fetched successfully',
+    type: GetReviewResDto,
+    description: 'Review fetched successfully',
     status: 200,
   })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async getStudentById(@Param('id') studentId: number) {
-    const studentExists = await this.reviewService.findOneById(studentId);
-
-    if (!studentExists) {
-      throw new BadRequestException({
-        status: HttpStatus.NOT_FOUND,
-        message: 'Student not found',
-      });
+  async getReviewById(@Param('id') reviewId: number) {
+    const review = await this.reviewService.getOneReview(reviewId);
+    if (!review) {
+      throw new NotFoundException('Review not found');
     }
-
-    return new GetStudentResDto({
-      message: 'Student fetched Successfully',
-      student: studentExists,
+    return new GetReviewResDto({
+      message: 'Review fetched successfully',
+      review,
     });
   }
 
-  @Patch(':id')
+  @Patch('/:id')
   @ApiOperation({ summary: 'Update a Review by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
   @ApiResponse({
-    type: GetStudentResDto,
-    description: 'Student updated successfully',
+    type: GetReviewResDto,
+    description: 'Review updated successfully',
     status: 200,
   })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async updateStudentById(
-    @Req() req: Request,
-    @Body() body: SignUpReqDto,
-    @Param('id') studentId: number,
+  async updateReviewById(
+    @Param('id') reviewId: number,
+    @Body() body: ReviewReqDto,
   ) {
-    const { fullname, email, phone, password } = body;
-    const studentExists = await this.reviewService.findOneById(studentId);
-
-    if (!studentExists) {
-      throw new BadRequestException({
-        status: HttpStatus.NOT_FOUND,
-        message: 'Student not found',
-      });
+    const updated = await this.reviewService.updateReview(reviewId, body);
+    if (!updated) {
+      throw new NotFoundException('Review not found');
     }
-
-    if (!fullname || !email || !phone || !password) {
-      throw new BadRequestException({
-        status: HttpStatus.BAD_REQUEST,
-        message: 'full name, email, phone or password are required',
-      });
-    }
-
-    const updatedStudent = await this.reviewService.updateStudentById(
-      studentId,
-      fullname,
-      email,
-      phone,
-      password,
-    );
-
-    console.log(updatedStudent);
-
-    return new GetStudentResDto({
-      message: 'Student Updated Sucessfully',
-      student: updatedStudent,
+    return new GetReviewResDto({
+      message: 'Review updated successfully',
+      review: updated,
     });
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   @ApiOperation({ summary: 'Delete a Review by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
   @ApiResponse({
-    type: GetStudentResDto,
-    description: 'Student deleted successfully',
+    type: GetReviewResDto,
+    description: 'Review deleted successfully',
     status: 200,
   })
-  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
-  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
-  async deleteStudentById(@Param('id') studentId: number) {
-    const studentExists = await this.reviewService.findOneById(studentId);
-
-    if (!studentExists) {
-      throw new BadRequestException({
-        status: HttpStatus.NOT_FOUND,
-        message: 'Student does not exist',
-      });
+  async deleteReviewById(@Param('id') reviewId: number) {
+    const review = await this.reviewService.getOneReview(reviewId);
+    if (!review) {
+      throw new NotFoundException('Review not found');
     }
+    const deleted = await this.reviewService.deleteReview(reviewId);
 
-    await this.reviewService.deleteStudentById(studentId);
-
-    return new GetStudentResDto({
-      message: 'Student deleted successfully',
-      student: studentExists,
+    return new GetReviewResDto({
+      message: 'Review deleted successfully',
+      review,
     });
   }
 }

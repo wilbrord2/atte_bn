@@ -132,7 +132,6 @@ export class UserController {
       password,
     );
 
-    console.log(updatedStudent);
 
     return new GetStudentResDto({
       message: 'Student Updated Sucessfully',

@@ -80,39 +80,54 @@ export class ClassManagementService {
     }
   }
 
-  // async updateStudentById(
-  //   studentId: number,
-  //   name: string,
-  //   email: string,
-  //   phone: string,
-  //   password: string,
-  // ): Promise<StudentsResDto> {
-  //   try {
-  //     await this.userRepository.update(
-  //       { id: studentId },
-  //       {
-  //         name: name,
-  //         email: email,
-  //         phone: phone,
-  //         password: password,
-  //       },
-  //     );
+  async getOneClassroomById(id: number): Promise<ClassroomResDto | null> {
+    try {
+      const classroom = await this.classroomRepository.findOne({
+        where: { id },
+        relations: ['user'],
+      });
 
-  //     return await this.findOneById(studentId);
-  //   } catch (error) {
-  //     console.log(error);
-  //     throw new InternalServerErrorException();
-  //   }
-  // }
+      return classroom ? new ClassroomResDto(classroom) : null;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
 
-  // async deleteStudentById(studentId: number): Promise<void> {
-  //   console.log({ studentId });
-  //   try {
-  //     const result = await this.userRepository.delete({ id: studentId });
-  //     console.log(result);
-  //   } catch (error) {
-  //     console.log(error);
-  //     throw new InternalServerErrorException();
-  //   }
-  // }
+  async updateClassroomById(
+    id: number,
+    body: ClassroomReqDto,
+  ): Promise<ClassroomResDto | null> {
+    try {
+      const exists = await this.classroomRepository.findOne({ where: { id } });
+      if (!exists) return null;
+
+      await this.classroomRepository.update(id, {
+        academic_year: body.academic_year,
+        year_level: body.year_level,
+        intake: body.intake,
+        department: body.department,
+        class_label: body.class_label,
+      });
+
+      const updated = await this.classroomRepository.findOne({ where: { id } });
+      return new ClassroomResDto(updated);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async deleteClassroomById(id: number): Promise<ClassroomResDto | null> {
+    try {
+      const exists = await this.classroomRepository.findOne({ where: { id } });
+      if (!exists) return null;
+
+      await this.classroomRepository.delete(id);
+      return new ClassroomResDto(exists);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
 }

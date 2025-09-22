@@ -1,6 +1,5 @@
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
-import { StudentsResDto } from 'src/user/v1/dtos';
 
 @ApiTags('students')
 export class ClassroomResDto {
