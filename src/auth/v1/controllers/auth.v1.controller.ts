@@ -49,14 +49,14 @@ export class AuthControllerV1 {
     body.phone = body.phone.trim();
     body.password = body.password.trim();
 
-     if (
-       !body.email.includes('@ines.ac.rw') ||
-       !body.email.endsWith('@ines.ac.rw')
-     ) {
-       throw new BadRequestException(
-         'Invalid email: please use your official INES email address ending with @ines.ac.rw',
-       );
-     }
+    if (
+      !body.email.includes('@ines.ac.rw') ||
+      !body.email.endsWith('@ines.ac.rw')
+    ) {
+      throw new BadRequestException(
+        'Invalid email: please use your official INES email address ending with @ines.ac.rw',
+      );
+    }
 
     const foundUserRecord = await this.authService.findOneByEmail(body.email);
 
@@ -85,7 +85,6 @@ export class AuthControllerV1 {
     });
   }
 
-
   @Post('signin')
   @ApiBody({ type: SignInReqDto })
   @ApiResponse({
@@ -104,7 +103,7 @@ export class AuthControllerV1 {
 
     if (!foundUserRecord)
       throw new NotFoundException(
-        `(${body.email}) has no account yet. Please sign up`,
+        `(${body.email}) has no account yet or It had been deleted. Please sign up`,
       );
 
     const accessToken = await this.jwtService.signAsync(

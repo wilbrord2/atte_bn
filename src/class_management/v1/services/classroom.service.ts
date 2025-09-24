@@ -80,6 +80,33 @@ export class ClassManagementService {
     }
   }
 
+  async getStudentClassrooms(
+    userId: number,
+  ): Promise<Partial<ClassroomResDto[]>> {
+    try {
+      const classrooms = await this.classroomRepository.find({
+        where: {
+          user: { id: userId },
+        },
+        select: {
+          id: true,
+          academic_year: true,
+          year_level: true,
+          intake: true,
+          department: true,
+          class_label: true,
+          created_at: true,
+          class_status: true,
+        },
+      });
+      const allClassrooms = classrooms.map((room) => new ClassroomResDto(room));
+      return allClassrooms;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
   async getOneClassroomById(id: number): Promise<ClassroomResDto | null> {
     try {
       const classroom = await this.classroomRepository.findOne({

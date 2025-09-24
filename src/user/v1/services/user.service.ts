@@ -17,6 +17,7 @@ export class UserService {
       const result = await this.userRepository.findOne({
         where: {
           id: userId,
+          archived: Archived.NO,
         },
         select: {
           id: true,
@@ -38,6 +39,7 @@ export class UserService {
       const result = await this.userRepository.findOne({
         where: {
           email: email,
+          archived: Archived.NO,
         },
         select: {
           id: true,
@@ -85,6 +87,33 @@ export class UserService {
       const students = await this.userRepository.find({
         where: {
           role: Role.STUDENT,
+          archived: 'no',
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          is_class_representative: true,
+        },
+        order: {
+          created_at: 'DESC',
+        },
+      });
+      const allStudents = students.map((stu) => new StudentsResDto(stu));
+      return allStudents;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async getAllAdmins(): Promise<Partial<StudentsResDto[]>> {
+    try {
+      const students = await this.userRepository.find({
+        where: {
+          role: Role.ADMIN,
           archived: 'no',
         },
         select: {

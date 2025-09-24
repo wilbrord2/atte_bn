@@ -54,6 +54,27 @@ export class UserController {
     });
   }
 
+  @Get('admins')
+  @ApiOperation({ summary: 'Get All Admins' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Admin)
+  @ApiResponse({ type: GetAllStudentsResDto, isArray: true, status: 200 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
+  async getAllAdmins() {
+    const students = await this.userService.getAllAdmins();
+
+    return new GetAllStudentsResDto({
+      message: 'Fetched all students successfully',
+      students,
+    });
+  }
+
   @Get('profile')
   @ApiOperation({ summary: 'user profile' })
   @ApiBearerAuth('access-token')

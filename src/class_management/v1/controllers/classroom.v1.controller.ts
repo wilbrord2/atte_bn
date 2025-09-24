@@ -27,7 +27,6 @@ import {
   GetAllClassroomsResDto,
 } from '../dtos';
 import type { Request } from 'express';
-import { SignUpReqDto } from 'src/auth/v1/dtos';
 
 @ApiTags('Class-Management')
 @Controller({ path: 'class', version: '1' })
@@ -56,7 +55,7 @@ export class ClassManagementController {
       });
     } else {
       const classroom = await this.classroomService.create(userId, body);
-     
+
       return new GetClassroomResDto({
         message: 'Classroom created successfully',
         classroom,
@@ -68,7 +67,7 @@ export class ClassManagementController {
   @ApiOperation({ summary: 'Get all Classroom' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
-  @Roles(Role.Student)
+  @Roles(Role.Admin)
   @ApiResponse({ type: GetAllClassroomsResDto, isArray: true, status: 200 })
   @ApiResponse({ type: HttpExceptionSchema, status: 400 })
   @ApiResponse({ type: HttpExceptionSchema, status: 401 })
@@ -78,6 +77,28 @@ export class ClassManagementController {
   @ApiResponse({ type: HttpExceptionSchema, status: 404 })
   async getAllClassRooms() {
     const classrooms = await this.classroomService.getAllClassrooms();
+
+    return new GetAllClassroomsResDto({
+      message: 'Fetched all students successfully',
+      classrooms,
+    });
+  }
+
+  @Get('my-class')
+  @ApiOperation({ summary: 'Get all Classroom' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Student)
+  @ApiResponse({ type: GetAllClassroomsResDto, isArray: true, status: 200 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
+  async getStudentClassRooms(@Req() req: Request) {
+    const userId = Number(req?.['user'].id);
+    const classrooms = await this.classroomService.getStudentClassrooms(userId);
 
     return new GetAllClassroomsResDto({
       message: 'Fetched all students successfully',
