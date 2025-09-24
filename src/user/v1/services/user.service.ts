@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InternalServerErrorException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Role, User } from '../entities';
+import { Archived, Role, User } from '../entities';
 import { StudentsResDto } from '../dtos';
 
 @Injectable()
@@ -85,6 +85,7 @@ export class UserService {
       const students = await this.userRepository.find({
         where: {
           role: Role.STUDENT,
+          archived: 'no',
         },
         select: {
           id: true,
@@ -92,6 +93,10 @@ export class UserService {
           email: true,
           phone: true,
           role: true,
+          is_class_representative: true,
+        },
+        order: {
+          created_at: 'DESC',
         },
       });
       const allStudents = students.map((stu) => new StudentsResDto(stu));
@@ -127,11 +132,66 @@ export class UserService {
     }
   }
 
-  async deleteStudentById(studentId: number): Promise<void> {
-   
+  async ApproveStudentById(studentId: number): Promise<StudentsResDto> {
     try {
-      const result = await this.userRepository.delete({ id: studentId });
-     
+      await this.userRepository.update(
+        { id: studentId },
+        {
+          is_class_representative: true,
+        },
+      );
+
+      return await this.findOneById(studentId);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async RejectStudentById(studentId: number): Promise<StudentsResDto> {
+    try {
+      await this.userRepository.update(
+        { id: studentId },
+        {
+          is_class_representative: false,
+        },
+      );
+
+      return await this.findOneById(studentId);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async ChangeUserRoleById(studentId: number): Promise<StudentsResDto> {
+    const result = await this.findOneById(studentId);
+    try {
+      await this.userRepository.update(
+        { id: studentId },
+        {
+          role: result.role === Role.ADMIN ? Role.STUDENT : Role.ADMIN,
+        },
+      );
+
+      return await this.findOneById(studentId);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async deleteStudentById(studentId: number, adminId: number): Promise<void> {
+    const admin = await this.findOneById(adminId);
+    try {
+      const result = await this.userRepository.update(
+        { id: studentId },
+        {
+          archived: Archived.YES,
+          archived_by: admin.email,
+          archived_date: new Date(),
+        },
+      );
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException();

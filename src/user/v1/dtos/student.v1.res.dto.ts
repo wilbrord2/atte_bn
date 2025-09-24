@@ -31,6 +31,10 @@ export class StudentsResDto {
   @ApiProperty({ type: 'string', description: 'Login Access Token' })
   @Expose()
   phone: string;
+
+  @ApiProperty({ type: 'boolean', description: 'true' })
+  @Expose()
+  is_class_representative: boolean;
 }
 
 export class GetAllStudentsResDto {
