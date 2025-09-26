@@ -76,6 +76,33 @@ export class ReviewService {
       throw new InternalServerErrorException('Failed to fetch reviews');
     }
   }
+  /** 🔹 Get all reviews */
+  async getClassReviews(
+    userId: number,
+    classId: number,
+  ): Promise<ReviewResDto[]> {
+    try {
+      const reviews = await this.reviewRepository.find({
+        where: {
+          user: { id: userId },
+          classroom: { id: classId },
+        },
+        relations: ['user', 'classroom'],
+        order: { created_at: 'DESC' },
+      });
+
+      return reviews.map(
+        (review) =>
+          new ReviewResDto({
+            ...review,
+            class_period: review.class_period as Period,
+          }),
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to fetch reviews');
+    }
+  }
 
   /** 🔹 Get one review by ID */
   async getOneReview(id: number): Promise<ReviewResDto> {

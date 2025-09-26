@@ -36,18 +36,22 @@ export class ReviewsController {
     private readonly classroomService: ClassManagementService,
   ) {}
 
-  @Post()
+  @Post('/:id')
   @ApiBody({ type: ReviewReqDto })
   @ApiOperation({ summary: 'Submit a review' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Student)
   @ApiResponse({ type: GetReviewResDto, status: HttpStatus.OK })
-  async CreateClassReview(@Body() body: ReviewReqDto, @Req() req: Request) {
+  async CreateClassReview(
+    @Body() body: ReviewReqDto,
+    @Req() req: Request,
+    @Param('id') classId: number,
+  ) {
     const userId = Number(req?.['user'].id);
     const is_verified = await this.classroomService.findVerifiedOneById(userId);
     const hasClassRoom = await this.reviewService.getStudentClass(userId);
-
+   
     if (!is_verified) {
       throw new BadRequestException({
         status: HttpStatus.BAD_REQUEST,
@@ -57,11 +61,7 @@ export class ReviewsController {
     } else if (!hasClassRoom) {
       throw new NotFoundException('Student is not assigned to any classroom');
     } else {
-      const review = await this.reviewService.create(
-        hasClassRoom.id,
-        userId,
-        body,
-      );
+      const review = await this.reviewService.create(classId, userId, body);
 
       return new GetReviewResDto({
         message: 'Review Submitted Successfully',
@@ -78,6 +78,22 @@ export class ReviewsController {
   @ApiResponse({ type: GetAllReviewsResDto, status: 200 })
   async getAllReviews() {
     const reviews = await this.reviewService.getAllReviews();
+
+    return new GetAllReviewsResDto({
+      message: 'Fetched all reviews successfully',
+      reviews,
+    });
+  }
+
+  @Get('my-class/:id')
+  @ApiOperation({ summary: 'Get All Reviews' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Student)
+  @ApiResponse({ type: GetAllReviewsResDto, status: 200 })
+  async getClassReviews(@Param('id') classId: number, @Req() req: Request) {
+    const userId = Number(req?.['user'].id);
+    const reviews = await this.reviewService.getClassReviews(userId, classId);
 
     return new GetAllReviewsResDto({
       message: 'Fetched all reviews successfully',
