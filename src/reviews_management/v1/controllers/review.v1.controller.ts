@@ -20,12 +20,17 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { AccessTokenGuard, RbacGuard } from '../../../auth/v1/guards';
-import { HttpExceptionSchema, Role, Roles } from '../../../__helpers__';
+import { Role, Roles } from '../../../__helpers__';
 
 import { ReviewService } from '../services/review.service';
 
 import type { Request } from 'express';
-import { ReviewReqDto, GetReviewResDto, GetAllReviewsResDto } from '../dtos';
+import {
+  ReviewReqDto,
+  GetReviewResDto,
+  GetAllReviewsResDto,
+  EditReviewReqDto,
+} from '../dtos';
 import { ClassManagementService } from '../../../class_management/v1/services/classroom.service';
 
 @ApiTags('Reviews')
@@ -50,8 +55,8 @@ export class ReviewsController {
   ) {
     const userId = Number(req?.['user'].id);
     const is_verified = await this.classroomService.findVerifiedOneById(userId);
-    const hasClassRoom = await this.reviewService.getStudentClass(userId);
-   
+    const hasClassRoom = await this.reviewService.getStudentClass(classId);
+
     if (!is_verified) {
       throw new BadRequestException({
         status: HttpStatus.BAD_REQUEST,
@@ -59,7 +64,9 @@ export class ReviewsController {
           'You are not allowed to create a review, you must first be verified!!',
       });
     } else if (!hasClassRoom) {
-      throw new NotFoundException('Student is not assigned to any classroom');
+      throw new NotFoundException(
+        'Classroom is not yet Approved, Check Classroom Status!!',
+      );
     } else {
       const review = await this.reviewService.create(classId, userId, body);
 
@@ -134,23 +141,40 @@ export class ReviewsController {
   })
   async updateReviewById(
     @Param('id') reviewId: number,
-    @Body() body: ReviewReqDto,
+    @Req() req: Request,
+    @Body() body: EditReviewReqDto,
   ) {
-    const updated = await this.reviewService.updateReview(reviewId, body);
-    if (!updated) {
-      throw new NotFoundException('Review not found');
+    const userId = Number(req?.['user'].id);
+    const is_verified = await this.classroomService.findVerifiedOneById(userId);
+    const hasClassRoom = await this.reviewService.getStudentClass(body.classId);
+
+    if (!is_verified) {
+      throw new BadRequestException({
+        status: HttpStatus.BAD_REQUEST,
+        message:
+          'You are not allowed to Edit a review, you must first be verified!!',
+      });
+    } else if (!hasClassRoom) {
+      throw new NotFoundException(
+        'Classroom is not yet Approved, Check Classroom Status!!',
+      );
+    } else {
+      const updated = await this.reviewService.updateReview(reviewId, body);
+      if (!updated) {
+        throw new NotFoundException('Review not found');
+      }
+      return new GetReviewResDto({
+        message: 'Review updated successfully',
+        review: updated,
+      });
     }
-    return new GetReviewResDto({
-      message: 'Review updated successfully',
-      review: updated,
-    });
   }
 
   @Delete('/:id')
   @ApiOperation({ summary: 'Delete a Review by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
-  @Roles(Role.Student)
+  @Roles(Role.Admin)
   @ApiResponse({
     type: GetReviewResDto,
     description: 'Review deleted successfully',

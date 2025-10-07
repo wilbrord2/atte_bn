@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InternalServerErrorException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { ClassRoom, ClassStatus } from '../entities';
-import { ClassroomResDto, ClassroomReqDto } from '../dtos';
+import { Archived, ClassRoom, ClassStatus } from '../entities';
+import { ClassroomResDto, ClassroomReqDto, ClassroomRepResDto } from '../dtos';
 import { User } from '../../../user/v1/entities';
 
 @Injectable()
@@ -58,9 +58,13 @@ export class ClassManagementService {
     }
   }
 
-  async getAllClassrooms(): Promise<Partial<ClassroomResDto[]>> {
+  async getAllClassrooms(): Promise<Partial<ClassroomRepResDto[]>> {
     try {
       const classrooms = await this.classroomRepository.find({
+        relations: ['user'],
+        where: {
+          archived: Archived.NO,
+        },
         select: {
           id: true,
           academic_year: true,
@@ -70,9 +74,23 @@ export class ClassManagementService {
           class_label: true,
           created_at: true,
           class_status: true,
+          user: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+            is_class_representative: true,
+            created_at: true,
+            role: true,
+          },
         },
+        order: { created_at: 'DESC' },
       });
-      const allClassrooms = classrooms.map((room) => new ClassroomResDto(room));
+
+      const allClassrooms = classrooms.map(
+        (room) => new ClassroomRepResDto(room),
+      );
+
       return allClassrooms;
     } catch (error) {
       console.log(error);
@@ -87,6 +105,7 @@ export class ClassManagementService {
       const classrooms = await this.classroomRepository.find({
         where: {
           user: { id: userId },
+          archived: Archived.NO,
         },
         select: {
           id: true,
@@ -110,7 +129,7 @@ export class ClassManagementService {
   async getOneClassroomById(id: number): Promise<ClassroomResDto | null> {
     try {
       const classroom = await this.classroomRepository.findOne({
-        where: { id },
+        where: { id, archived: Archived.NO },
         relations: ['user'],
       });
 
@@ -145,13 +164,51 @@ export class ClassManagementService {
     }
   }
 
-  async deleteClassroomById(id: number): Promise<ClassroomResDto | null> {
+  async deleteClassroomById(classId: number, adminId: number): Promise<void> {
+    const admin = await this.userService.findOneById(adminId);
     try {
-      const exists = await this.classroomRepository.findOne({ where: { id } });
-      if (!exists) return null;
+      const result = await this.classroomRepository.update(
+        { id: classId },
+        {
+          archived: Archived.YES,
+          archived_by: admin.email,
+          archived_date: new Date(),
+        },
+      );
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
 
-      await this.classroomRepository.delete(id);
-      return new ClassroomResDto(exists);
+  async ApproveClassroomById(classId: number): Promise<ClassroomResDto> {
+    try {
+      await this.classroomRepository.update(
+        { id: classId },
+        {
+          class_status: ClassStatus.APPROVED,
+          is_class_verified: true,
+        },
+      );
+
+      return await this.getOneClassroomById(classId);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async RejectClassroomById(classId: number): Promise<ClassroomResDto> {
+    try {
+      await this.classroomRepository.update(
+        { id: classId },
+        {
+          class_status: ClassStatus.REJECTED,
+          is_class_verified: false,
+        },
+      );
+
+      return await this.getOneClassroomById(classId);
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException();

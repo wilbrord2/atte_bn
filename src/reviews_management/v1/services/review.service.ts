@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { Reviews, Archived, Period } from '../entities';
 import { User } from '../../../user/v1/entities';
 import { ReviewReqDto, ReviewResDto } from '../dtos';
-import { ClassRoom } from '../../../class_management/v1/entities';
+import { ClassRoom, ClassStatus } from '../../../class_management/v1/entities';
 
 @Injectable()
 export class ReviewService {
@@ -23,10 +23,12 @@ export class ReviewService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async getStudentClass(userId: number): Promise<ClassRoom> {
+  async getStudentClass(classId: number): Promise<ClassRoom | null> {
     return this.classroomRepository.findOne({
-      where: { user: { id: userId } },
-      select: { id: true },
+      where: {
+        id: classId,
+        class_status: ClassStatus.APPROVED,
+      },
     });
   }
 

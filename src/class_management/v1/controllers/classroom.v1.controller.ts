@@ -25,6 +25,7 @@ import {
   GetClassroomResDto,
   ClassroomReqDto,
   GetAllClassroomsResDto,
+  GetClassroomsRepResDto,
 } from '../dtos';
 import type { Request } from 'express';
 
@@ -51,7 +52,8 @@ export class ClassManagementController {
     if (!is_verified) {
       throw new BadRequestException({
         status: HttpStatus.BAD_REQUEST,
-        message: 'You are not allowed to perform this action',
+        message:
+          'You are not allowed to Create classroom, Your account is not yet verified 😔',
       });
     } else {
       const classroom = await this.classroomService.create(userId, body);
@@ -68,7 +70,7 @@ export class ClassManagementController {
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
   @Roles(Role.Admin)
-  @ApiResponse({ type: GetAllClassroomsResDto, isArray: true, status: 200 })
+  @ApiResponse({ type: GetClassroomsRepResDto, isArray: true, status: 200 })
   @ApiResponse({ type: HttpExceptionSchema, status: 400 })
   @ApiResponse({ type: HttpExceptionSchema, status: 401 })
   @ApiResponse({ type: HttpExceptionSchema, status: 201 })
@@ -78,8 +80,8 @@ export class ClassManagementController {
   async getAllClassRooms() {
     const classrooms = await this.classroomService.getAllClassrooms();
 
-    return new GetAllClassroomsResDto({
-      message: 'Fetched all students successfully',
+    return new GetClassroomsRepResDto({
+      message: 'Fetched all Classroom successfully',
       classrooms,
     });
   }
@@ -153,19 +155,94 @@ export class ClassManagementController {
   @ApiOperation({ summary: 'Delete Classroom by ID' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
-  @Roles(Role.Student)
+  @Roles(Role.Admin, Role.Student)
   @ApiResponse({ type: GetClassroomResDto, status: 200 })
-  async deleteClassNameById(@Param('id') id: number) {
-    const deleted = await this.classroomService.deleteClassroomById(id);
-    if (!deleted) {
+  async deleteClassNameById(@Param('id') classId: number, @Req() req: Request) {
+    const userId = Number(req?.['user'].id);
+    const classExist = await this.classroomService.getOneClassroomById(classId);
+    if (!classExist) {
       throw new BadRequestException({
         status: HttpStatus.NOT_FOUND,
         message: 'Classroom not found',
       });
     }
+    await this.classroomService.deleteClassroomById(classId, userId);
+
     return new GetClassroomResDto({
       message: 'Classroom deleted successfully',
-      classroom: deleted,
+      classroom: classExist,
+    });
+  }
+
+  @Patch('approve/:id')
+  @ApiOperation({ summary: 'Approve Classroom by ID' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Admin)
+  @ApiResponse({
+    type: GetClassroomResDto,
+    description: 'Classroom updated successfully',
+    status: 200,
+  })
+  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
+  async ApproveClassroom(@Param('id') ClassId: number) {
+    const ClassroomExists =
+      await this.classroomService.getOneClassroomById(ClassId);
+
+    if (!ClassroomExists) {
+      throw new BadRequestException({
+        status: HttpStatus.NOT_FOUND,
+        message: 'Classroom not found',
+      });
+    }
+
+    const updatedClassroom =
+      await this.classroomService.ApproveClassroomById(ClassId);
+
+    return new GetClassroomResDto({
+      message: 'Classroom Approved Sucessfully',
+      classroom: updatedClassroom,
+    });
+  }
+
+  @Patch('reject/:id')
+  @ApiOperation({ summary: 'Update Classroom by ID' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AccessTokenGuard, RbacGuard)
+  @Roles(Role.Admin)
+  @ApiResponse({
+    type: GetClassroomResDto,
+    description: 'Classroom updated successfully',
+    status: 200,
+  })
+  @ApiResponse({ type: HttpExceptionSchema, status: 400 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 401 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 201 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 500 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 403 })
+  @ApiResponse({ type: HttpExceptionSchema, status: 404 })
+  async RejectClassroom(@Param('id') ClassId: number) {
+    const ClassroomExists =
+      await this.classroomService.getOneClassroomById(ClassId);
+
+    if (!ClassroomExists) {
+      throw new BadRequestException({
+        status: HttpStatus.NOT_FOUND,
+        message: 'Classroom not found',
+      });
+    }
+
+    const updatedClassroom =
+      await this.classroomService.RejectClassroomById(ClassId);
+
+    return new GetClassroomResDto({
+      message: 'Classroom Rejected Sucessfully',
+      classroom: updatedClassroom,
     });
   }
 }

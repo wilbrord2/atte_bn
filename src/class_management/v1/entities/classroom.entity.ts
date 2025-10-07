@@ -12,19 +12,17 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-
 export enum Archived {
   NO = 'no',
   YES = 'yes',
 }
 export enum ClassStatus {
   APPROVED = 'APPROVED',
-  PENDING='PENDING',
+  PENDING = 'PENDING',
   REJECTED = 'REJECTED',
 }
 
 @Entity({ name: 'classrooms' })
-
 export class ClassRoom {
   @PrimaryGeneratedColumn({ name: 'id' })
   id: number;
@@ -44,16 +42,16 @@ export class ClassRoom {
   @Column({ type: 'varchar', length: 20 })
   class_label: string;
 
-  @Column({ type: 'varchar', length: 20 })
-  class_status: string;
+  @Column({ type: 'enum', enum: ClassStatus, default: ClassStatus.PENDING })
+  class_status: ClassStatus;
 
-  @Column({ type: 'boolean', default:false })
+  @Column({ type: 'boolean', default: false })
   is_class_verified: boolean;
 
   @Column({ type: 'enum', enum: Archived, default: Archived.NO })
-  archived: string;
+  archived: Archived;
 
-  @Column({ type: 'varchar', nullable:true, length: 50 })
+  @Column({ type: 'varchar', nullable: true, length: 50 })
   archived_by: string;
 
   @Column({ type: 'timestamptz', nullable: true })
@@ -68,7 +66,7 @@ export class ClassRoom {
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'class_leader_id' })
   user: User;
-  
-   @OneToMany(() => Reviews, (reviews) => reviews.user)
-    reviews: Reviews[];
+
+  @OneToMany(() => Reviews, (reviews) => reviews.user)
+  reviews: Reviews[];
 }
