@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Reviews, Archived, Period } from '../entities';
 import { User } from '../../../user/v1/entities';
-import { ReviewReqDto, ReviewResDto } from '../dtos';
+import { ClassReviewsResDto, ReviewReqDto, ReviewResDto } from '../dtos';
 import { ClassRoom, ClassStatus } from '../../../class_management/v1/entities';
 
 @Injectable()
@@ -59,7 +59,7 @@ export class ReviewService {
   }
 
   /** 🔹 Get all reviews */
-  async getAllReviews(): Promise<ReviewResDto[]> {
+  async getAllReviews(): Promise<ClassReviewsResDto[]> {
     try {
       const reviews = await this.reviewRepository.find({
         relations: ['user', 'classroom'],
@@ -68,7 +68,7 @@ export class ReviewService {
 
       return reviews.map(
         (review) =>
-          new ReviewResDto({
+          new ClassReviewsResDto({
             ...review,
             class_period: review.class_period as Period,
           }),

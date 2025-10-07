@@ -30,6 +30,7 @@ import {
   GetReviewResDto,
   GetAllReviewsResDto,
   EditReviewReqDto,
+  GetAllClassReviewsResDto,
 } from '../dtos';
 import { ClassManagementService } from '../../../class_management/v1/services/classroom.service';
 
@@ -81,12 +82,12 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Get All Reviews' })
   @ApiBearerAuth('access-token')
   @UseGuards(AccessTokenGuard, RbacGuard)
-  @Roles(Role.Student)
-  @ApiResponse({ type: GetAllReviewsResDto, status: 200 })
+  @Roles(Role.Admin)
+  @ApiResponse({ type: GetAllClassReviewsResDto, status: 200 })
   async getAllReviews() {
     const reviews = await this.reviewService.getAllReviews();
 
-    return new GetAllReviewsResDto({
+    return new GetAllClassReviewsResDto({
       message: 'Fetched all reviews successfully',
       reviews,
     });
