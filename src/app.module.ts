@@ -20,6 +20,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ClassManagementModule } from './class_management/classroom.module';
 import { ReviewsModule } from './reviews_management/reviews.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { ReviewsModule } from './reviews_management/reviews.module';
     UserModule,
     ClassManagementModule,
     ReviewsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
 })
