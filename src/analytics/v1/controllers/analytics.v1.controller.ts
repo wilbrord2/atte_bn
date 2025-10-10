@@ -97,4 +97,6 @@ export class AnalyticsController {
       total_reviews: usage.total_reviews,
     });
   }
+
+  
 }
