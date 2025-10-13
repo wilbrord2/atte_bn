@@ -26,7 +26,7 @@ import {
   GetAllStudentsResDto,
 } from '../dtos/student.v1.res.dto';
 import type { Request } from 'express';
-import { SignUpReqDto } from 'src/auth/v1/dtos';
+import { SignUpReqDto } from '../../../auth/v1/dtos';
 
 @ApiTags('Students')
 @Controller({ path: 'student', version: '1' })

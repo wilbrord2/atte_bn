@@ -1,8 +1,8 @@
 import { ApiProperty, ApiTags } from '@nestjs/swagger';
 import { Expose, Transform, Type } from 'class-transformer';
 import { Archived, Period } from '../entities';
-import { StudentsResDto } from 'src/user/v1/dtos';
-import { ClassroomResDto } from 'src/class_management/v1/dtos';
+import { StudentsResDto } from '../../../user/v1/dtos';
+import { ClassroomResDto } from '../../../class_management/v1/dtos';
 
 @ApiTags('reviews')
 export class ReviewResDto {
